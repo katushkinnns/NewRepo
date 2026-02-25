@@ -1,0 +1,221 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <sstream>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+bool checkTxt(const string& name) {
+    return name.size() > 4 && name.substr(name.size() - 4) == ".txt";
+}
+
+bool fileExistsAndNotEmpty(const string& name) {
+    ifstream f(name);
+    if (!f.is_open()) return false;
+    return f.peek() != ifstream::traits_type::eof();
+}
+
+int inputInt(int min, int max) {
+    int x;
+    while (true) {
+        cin >> x;
+        if (cin.fail() || x < min || x > max) {
+            cin.clear();
+            cin.ignore(10000, '\n');
+            cout << "Ошибка ввода. Повторите (" << min << " или " << max << "): ";
+        }
+        else break;
+    }
+    return x;
+}
+
+string randomSurname() {
+    string s[] = { "Иванов","Петров","Сидоров","Смирнов","Кузнецов","Попов" };
+    return s[rand() % 6];
+}
+
+void generateStudentsFile(const string& name, int n) {
+    ofstream f(name);
+    for (int i = 0; i < n; i++) {
+        f << randomSurname() << " - "
+            << 2 + rand() % 4 << ", "
+            << 2 + rand() % 4 << ", "
+            << 2 + rand() % 4 << endl;
+    }
+}
+
+string randomLine() {
+    string w[] = { "file","string","student","random","example","console","text" };
+    string line;
+    int k = 3 + rand() % 4;
+    for (int i = 0; i < k; i++)
+        line += w[rand() % 7] + string(" ");
+    return line;
+}
+
+void generateTextFile(const string& name, int n) {
+    ofstream f(name);
+    for (int i = 0; i < n; i++)
+        f << randomLine() << endl;
+}
+
+bool passedAll(const string& line) {
+    size_t p = line.find('-');
+    if (p == string::npos) return false;
+
+    string grades = line.substr(p + 1);
+    stringstream ss(grades);
+    string g;
+    int cnt = 0;
+
+    while (getline(ss, g, ',')) {
+        int x;
+        try { x = stoi(g); }
+        catch (...) { return false; }
+        if (x < 3 || x > 5) return false;
+        cnt++;
+    }
+    return cnt == 3;
+}
+
+void task1() {
+    cout << "\nЗАДАНИЕ 1\n";
+    cout << "1 - использовать существующий файл\n";
+    cout << "2 - сгенерировать файл\n";
+    cout << "Ваш выбор: ";
+
+    int mode = inputInt(1, 2);
+
+    string inFile, outFile;
+    cout << "Введите имя входного файла (.txt): ";
+    cin >> inFile;
+
+    if (!checkTxt(inFile)) {
+        cout << "Ошибка: файл должен иметь расширение .txt\n";
+        exit(0);
+    }
+
+    if (mode == 2) {
+        cout << "Введите количество студентов: ";
+        int n = inputInt(1, 1000);
+        generateStudentsFile(inFile, n);
+        cout << "Файл сгенерирован.\n";
+    }
+    else {
+        if (!fileExistsAndNotEmpty(inFile)) {
+            cout << "Ошибка: файл не существует или пуст.\n";
+            exit(0);
+        }
+    }
+
+    cout << "Введите имя выходного файла (.txt): ";
+    cin >> outFile;
+
+    if (!checkTxt(outFile)) {
+        cout << "Ошибка: файл должен иметь расширение .txt\n";
+        exit(0);
+    }
+
+    ifstream in(inFile);
+    ofstream out(outFile);
+    string line;
+
+    while (getline(in, line)) {
+        if (passedAll(line))
+            out << line.substr(0, line.find('-')) << endl;
+    }
+
+    cout << "Задание 1 выполнено.\n";
+}
+
+bool substringExists(const string& file, const string& s) {
+    ifstream f(file);
+    string line;
+    while (getline(f, line))
+        if (line.find(s) != string::npos)
+            return true;
+    return false;
+}
+
+void task2() {
+    cout << "\nЗАДАНИЕ 2\n";
+    cout << "1 - использовать существующий файл\n";
+    cout << "2 - сгенерировать файл\n";
+    cout << "Ваш выбор: ";
+
+    int mode = inputInt(1, 2);
+
+    string F, G, S;
+    cout << "Введите имя файла F (.txt): ";
+    cin >> F;
+
+    if (!checkTxt(F)) {
+        cout << "Ошибка: файл должен иметь расширение .txt\n";
+        exit(0);
+    }
+
+    if (mode == 2) {
+        cout << "Введите количество строк: ";
+        int n = inputInt(1, 1000);
+        generateTextFile(F, n);
+        cout << "Файл сгенерирован.\n";
+    }
+    else {
+        if (!fileExistsAndNotEmpty(F)) {
+            cout << "Ошибка: файл не существует или пуст.\n";
+            exit(0);
+        }
+    }
+
+    while (true) {
+        cout << "Введите подстроку S: ";
+        cin >> S;
+
+        if (substringExists(F, S)) break;
+
+        cout << "Подстрока не найдена.\n";
+        cout << "0 - выход\n1 - повторный ввод\nВаш выбор: ";
+        int c = inputInt(0, 1);
+        if (c == 0) exit(0);
+    }
+
+    cout << "Введите имя файла G (.txt): ";
+    cin >> G;
+
+    if (!checkTxt(G)) {
+        cout << "Ошибка: файл должен иметь расширение .txt\n";
+        exit(0);
+    }
+
+    ifstream in(F);
+    ofstream out(G);
+    string line;
+
+    while (getline(in, line))
+        if (line.find(S) != string::npos)
+            out << line << endl;
+
+    cout << "Задание 2 выполнено.\n";
+}
+
+
+int main() {
+    setlocale(LC_ALL, "Russian");
+    srand(time(nullptr));
+
+    while (true) {
+        cout << "\n===== МЕНЮ =====\n";
+        cout << "1 - Задание 1\n";
+        cout << "2 - Задание 2\n";
+        cout << "Ваш выбор: ";
+
+        int choice = inputInt(1, 2);
+
+        if (choice == 1) task1();
+        if (choice == 2) task2();
+    }
+
+    return 0;
+}
